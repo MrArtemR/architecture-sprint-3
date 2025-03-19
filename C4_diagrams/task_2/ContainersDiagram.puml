@@ -1,0 +1,73 @@
+@startuml Containers Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_TOP_DOWN()
+top to bottom direction
+
+title "Теплый дом" Containers Diagram
+
+Person(user, "Пользователь", "Управляет системой отопления, получает данные о температуре.")
+
+System_Boundary(smartHome, "Теплый дом") {
+
+    Container(apiGateway, "API Gateway", "Kong", "Маршрутизация запросов, авторизация, кеширование, балансировка")
+
+    Container(identityService, "IdentityService", "Java", "Аутентификация и управление пользователями")
+    ContainerDb(identityDb, "IdentityServiceDB", "PostgreSQL", "Хранение данных пользователей")
+
+    Container(managmentToolsService, "ManagmentToolsService", "Java", "Сервис управления устройствами")
+    ContainerDb(managmentToolsDb, "ManagmentToolsDB", "PostgreSQL", "Хранение информации об устройствах")
+    
+    Container(deviceDataCollectionService, "DeviceDataCollectionService", "Java", "Сбор, обработка данных с устройств")
+    ContainerDb(deviceDataCollectionDb, "DeviceDataCollectionDB", "PostgreSQL", "Хранение данных c устройств")
+    
+    Container(integrationService, "IntegrationService", "Java", "Интеграция со сторонними устройствами")
+    ContainerDb(integrationDb, "IntegrationServiceDB", "PostgreSQL", "Хранение интеграций")
+
+    Container(analyticsService, "AnalyticsService", "Java", "Анализ данных, отчеты")
+    ContainerDb(analyticsDb, "AnalyticsServiceDB", "ClickHouse", "Хранение аналитических данных")
+
+    Container(notificationService, "NotificationService", "Java", "Отправка уведомлений по различным каналам")
+    ContainerDb(notificationDb, "NotificationServiceDB", "PostgreSQL", "Хранение информации о каналах")
+    
+    Container(supportService, "SupportService", "Java", "Сервис техподдержки")
+    ContainerDb(supportDb, "SupportServiceDB", "PostgreSQL", "Хранение тикетов и другой информации")
+    
+    SystemQueue(kafka, "Kafka", "Асинхронное взаимодействие сервисов")
+    ContainerDb(redis, "Redis", "Cache", "Кеширование данных")
+}
+
+System_Ext(tools, "Устройства", "Температурные датчики, умные розетки, камеры наблюдения и тд")
+
+Rel(user, apiGateway, "Взаимодействие через HTTPS (REST API)")
+
+Rel(apiGateway, managmentToolsService, "Запрос - управление устройствами")
+Rel(apiGateway, deviceDataCollectionService, "Запрос на получения данных с устройств")
+Rel(apiGateway, identityService, "Аутентификация и авторизация пользователей")
+Rel(apiGateway, integrationService, "Интеграция с внешними устройствами и сервисами")
+Rel(apiGateway, supportService, "Создание и обработка тикетов")
+Rel(apiGateway, notificationService, "Настройка каналов уведомлений пользователей")
+Rel(apiGateway, analyticsService, "Генерация отчетов")
+
+Rel(managmentToolsService, tools, "Передача команд через WebSockets")
+Rel(deviceDataCollectionService, tools, "Сбор данных через WebSockets")
+
+Rel(deviceDataCollectionService, kafka, "Сохраняет", "kafka")
+Rel(managmentToolsService, kafka, "Сохраняет", "kafka")
+Rel(analyticsService, kafka, "Потребляет", "kafka")
+Rel(integrationService, kafka, "Сохраняет", "kafka")
+Rel(notificationService, kafka, "Потребляет", "kafka")
+
+Rel(managmentToolsService, managmentToolsDb, "Чтение/запись")
+Rel(deviceDataCollectionService, deviceDataCollectionDb, "Чтение/запись")
+Rel(identityService, identityDb, "Чтение/запись")
+Rel(integrationService, integrationDb, "Чтение/запись")
+Rel(supportService, supportDb, "Чтение/запись")
+Rel(notificationService, notificationDb, "Чтение/запись")
+Rel(analyticsService, analyticsDb, "Чтение/запись")
+
+Rel(analyticsService, redis, "Кеширование результатов аналитики")
+
+@enduml

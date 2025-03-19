@@ -1,0 +1,27 @@
+@startuml Context Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_TOP_DOWN()
+
+top to bottom direction
+
+title "Теплый дом" Context Diagram
+
+Person(user, "Пользователь", "Управляет системой отопления, получает данные о температуре.")
+Person(support, "Специалист", "Подключает систему отопления.")
+
+System(warmHouseSystem, "Система Теплый дом", "Управляет отоплением. Получает данные о ткущей температуре с датчиков.")
+
+
+System_Ext(temperatureSensor, "Датчик температуры", "Передает температуру в систему Теплый дом.")
+System_Ext(heatingSystem, "Система отопления", "Управляет включением/выключением отопительных приборов на основе команд системы.")
+
+Rel(user, warmHouseSystem, "Использует систему")
+Rel(support, warmHouseSystem, "Подключает систему")
+
+Rel(warmHouseSystem, temperatureSensor, "Запрашивает данные с датчика")
+Rel(warmHouseSystem, heatingSystem, "Отправляет команды включения/выключения, устанавливает температуру")
+
+@enduml
