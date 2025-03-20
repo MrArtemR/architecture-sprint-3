@@ -1,0 +1,59 @@
+@startuml UsersCodeDiagram
+
+
+    class UsersController {
+        - service : UsersService
+        <<constructor>> UsersController(service_ : UsersService)
+        + create(user_dto: UserDto)
+        + get(email: string)
+        + update(user_dto: UserDto)
+        + delete(email: string)
+    }
+
+    interface IUsersService {
+        + {abstract} create(userDto: UserDto)
+        + {abstract} get(email: string)
+        + {abstract} update(userDto: UserDto)
+        + {abstract} delete(email: string)
+    }
+    class UsersService implements IUsersService {
+        - repository : IUsersRepository
+        <<constructor>> UsersServiceImpl(repository_ : IUsersRepository)
+        + create(user_dto: UserDTO)
+        + get(email: string)
+        + update(user_dto: UserDTO)
+        + delete(email: string)
+    }
+
+    interface IUsersRepository {
+        + {abstract} create(user_entity: UserEntity)
+        + {abstract} get(id : number)
+        + {abstract} update(user_entity: UserEntity)
+        + {abstract} delete(id : number)
+    }
+
+    struct UserDto {
+        email : string
+        first_name : string
+        last_name : string
+    }
+
+    struct UserEntity {
+        id : number
+        email : string
+        first_name : string
+        last_name : string
+    }
+
+    UsersController::service *-- IUsersService
+    UsersController::create <.. UserDto
+    UsersController::update <.. UserDto
+    IUsersService::create <.. UserDto
+    IUsersService::update <.. UserDto
+    UsersService::create <.. UserDto
+    UsersService::update <.. UserDto
+    UsersService::repository *-- IUsersRepository
+    IUsersRepository::create <.. UserEntity
+    IUsersRepository::update <.. UserEntity
+
+@enduml

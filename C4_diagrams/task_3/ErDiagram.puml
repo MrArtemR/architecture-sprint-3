@@ -1,0 +1,68 @@
+@startuml ErDiagram
+
+skinparam linetype ortho
+
+entity Users {
+  *id : number <<generated>>
+  --
+  *email : string
+  *passwordHash : string
+  firstName : string
+  lastName : string
+}
+
+entity Houses {
+  *id : number <<generated>>
+  --
+  address : string
+}
+
+entity HouseOwners {
+  *id : number <<generated>>
+  --
+  *homeId : number <<FK>>
+  *ownerId : number <<FK>>
+}
+
+entity Devices {
+  *id : number <<generated>>
+  --
+  *homeId : number <<FK>>
+  *typeId : number <<FK>>
+  connect_url : string
+  status : string
+}
+
+entity Scenarios {
+  *id : number <<generated>>
+  --
+  *homeId : number <<FK>>
+  scenario : string
+  cron : string
+}
+
+entity TelemetryData {
+    * id : number <<generated>>
+    --
+    deviceId: number <<FK>>
+    timestamp: DateTime
+    status: String
+    value: Float
+}
+
+entity DeviceType {
+    * id : number <<generated>>
+    --
+    name: String
+    category: String
+    description: String
+}
+
+Users ||..o{ HouseOwners : "связан с"
+Houses ||..o{ Scenarios : "относится к"
+Houses ||..o{ HouseOwners : связан с
+Houses ||..o{ Devices : "содержит"
+Devices ||--o{ TelemetryData : "генерирует данные"
+Devices ||--|| DeviceType : "относится к"
+
+@enduml

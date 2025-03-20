@@ -1,0 +1,123 @@
+@startuml Components Diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+top to bottom direction
+
+title "Теплый дом" Containers Diagram
+
+Person(user, "Пользователь", "Управляет системой отопления, получает данные о температуре.")
+
+System_Boundary(smartHome, "Теплый дом") {
+
+    Container(apiGateway, "API Gateway", "Kong", "Маршрутизация запросов, авторизация, кеширование, балансировка")
+
+    Container_Boundary(identityService, "Аутентификация и управление пользователями") {
+        Component(signInController, "Sign in Controller", "Component: Spring MVC Rest Controller", "Позволяет пользователям входить в систему")
+        Component(resetPasswordController, "Reset Password Controller", "Component: Spring MVC Rest Controller", "Позволяет пользователям сбрасывать пароль")
+        Component(userController, "User Controller", "Component: Spring MVC Rest Controller", "Позволяет создавать, редактировать, удалять пользователей")
+        Component(securityComponent, "Security Component", "Component: Spring Bean", "Обеспечивает функционал входа, сброса пароля")
+        Component(userComponent, "user Component", "Component: Spring Bean", "Обеспечивает функционал создания, редактирования, удаления пользователей")
+        ContainerDb(identityDb, "IdentityServiceDB", "PostgreSQL", "Хранение данных пользователей")
+    }
+
+    Container_Boundary(managmentToolsService, "Сервис управления устройствами") {
+        Component(deviceControlController, "Device Control Controller", "Component: Spring MVC Rest Controller", "Позволяет управлять устройствами")
+        Component(deviceRegistrationController, "Device Registration Controller", "Component: Spring MVC Rest Controller", "Позволяет добавлять новые устройства")
+        Component(deviceControlComponent, "Device Component", "Component: Spring Bean", "Обеспечивает функционал управления устройствами")
+        ContainerDb(managmentToolsDb, "ManagmentToolsDB", "PostgreSQL", "Хранение информации об устройствах")
+    }
+
+    Container_Boundary(deviceDataCollectionService, "Сбор, обработка данных с устройств") {
+        Component(deviceDataController, "Device Data Controller", "Component: Spring MVC Rest Controller", "Позволяет получать данные с устройств")
+        Component(deviceDataComponent, "Device Data Component", "Component: Spring Bean", "Обеспечивает получение данных с устройств")
+        ContainerDb(deviceDataCollectionDb, "DeviceDataCollectionDB", "PostgreSQL", "Хранение данных c устройств")
+    }
+
+    Container_Boundary(integrationService, "Интеграция со сторонними устройствами") {
+        Component(integrationController, "Integration Controller", "Component: Spring MVC Rest Controller", "Позволяет интегрировать новые устройства производителей")
+        Component(integrationComponent, "Integration Component", "Component: Spring Bean", "Обеспечивает интеграциию новых устройств")
+        ContainerDb(integrationDb, "IntegrationServiceDB", "PostgreSQL", "Хранение интеграций")
+    }
+
+    Container_Boundary(analyticsService, "Анализ данных, отчеты") {
+        Component(analyticController, "Analytic Controller", "Component: Spring MVC Rest Controller", "Позволяет получить аналитические данные")
+        Component(analyticReportController, "Analytic Report Controller", "Component: Spring MVC Rest Controller", "Позволяет сгенирировать отчеты")
+        Component(analyticComponent, "Analytic Component", "Component: Spring Bean", "Обеспечивает обработку данных")
+        Component(analyticReportComponent, "Report Component", "Component: Spring Bean", "Обеспечивает генерацию отчетов")
+        ContainerDb(analyticsDb, "AnalyticsServiceDB", "ClickHouse", "Хранение аналитических данных")
+    }
+
+    Container_Boundary(notificationService, "Отправка уведомлений по различным каналам") {
+        Component(notificationController, "Notification Controller", "Component: Spring MVC Rest Controller", "Позволяет настраивать уведомления")
+        Component(notificationComponent, "Notification Component", "Component: Spring Bean", "Обеспечивает отправку уведомлений")
+        ContainerDb(notificationDb, "NotificationServiceDB", "PostgreSQL", "Хранение информации о каналах")
+    }
+
+    Container_Boundary(supportService, "Сервис техподдержки") {
+        Component(ticketManagmentController, "Ticket Managment Controller", "Component: Spring MVC Rest Controller", "Позволяет управлять тикетами поддрежки")
+        Component(ticketSupportController, "Ticket Support Controller", "Component: Spring MVC Rest Controller", "Позволяет настраивать каналы тикетов для поддрежки")
+        Component(ticketSupportComponent, "Ticket Support Component", "Component: Spring Bean", "Обеспечивает управление тикетами")
+        ContainerDb(supportDb, "SupportServiceDB", "PostgreSQL", "Хранение тикетов и другой информации")
+    }
+
+    SystemQueue(kafka, "Kafka", "Асинхронное взаимодействие сервисов")
+    ContainerDb(redis, "Redis", "Cache", "Кеширование данных")
+}
+
+System_Ext(tools, "Устройства", "Температурные датчики, умные розетки, камеры наблюдения и тд")
+
+Rel(user, apiGateway, "Взаимодействие через HTTPS (REST API)")
+
+Rel(apiGateway, identityService, "Аутентификация и авторизация пользователей")
+Rel(apiGateway, managmentToolsService, "Запрос - управление устройствами")
+Rel(apiGateway, deviceDataCollectionService, "Запрос на получения данных с устройств")
+Rel(apiGateway, integrationService, "Интеграция с внешними устройствами и сервисами")
+Rel(apiGateway, supportService, "Создание и обработка тикетов")
+Rel(apiGateway, notificationService, "Настройка каналов уведомлений пользователей")
+Rel(apiGateway, analyticsService, "Генерация отчетов")
+
+Rel(managmentToolsService, tools, "Передача команд через WebSockets")
+Rel(deviceDataComponent, tools, "Сбор данных через WebSockets")
+
+Rel(deviceDataComponent, kafka, "Сохраняет", "kafka")
+Rel(deviceControlComponent, kafka, "Сохраняет", "kafka")
+Rel(analyticComponent, kafka, "Потребляет", "kafka")
+Rel(integrationComponent, kafka, "Сохраняет", "kafka")
+Rel(notificationComponent, kafka, "Потребляет", "kafka")
+
+Rel(signInController, securityComponent, "Использует")
+Rel(resetPasswordController, securityComponent, "Использует")
+Rel(userController, userComponent, "Использует")
+Rel(userComponent, identityDb, "Чтение/запись")
+Rel(securityComponent, identityDb, "Чтение/запись")
+
+Rel(deviceControlController, deviceControlComponent, "Использует")
+Rel(deviceRegistrationController, deviceControlComponent, "Использует")
+Rel(deviceControlComponent, managmentToolsDb, "Чтение/запись")
+
+Rel(deviceDataController, deviceDataComponent, "Использует")
+Rel(deviceDataComponent, deviceDataCollectionDb, "Чтение/запись")
+
+Rel(integrationController, integrationComponent, "Использует")
+Rel(integrationComponent, integrationDb, "Чтение/запись")
+
+Rel(ticketManagmentController, ticketSupportComponent, "Использует")
+Rel(ticketSupportController, ticketSupportComponent, "Использует")
+Rel(ticketSupportComponent, supportDb, "Чтение/запись")
+
+Rel(notificationController, notificationComponent, "Использует")
+Rel(notificationComponent, notificationDb, "Чтение/запись")
+
+
+Rel(analyticController, analyticComponent, "Использует")
+Rel(analyticReportController, analyticReportComponent, "Использует")
+Rel(analyticReportComponent, analyticComponent, "Использует")
+Rel(analyticComponent, analyticsDb, "Чтение/запись")
+
+Rel(analyticReportComponent, redis, "Кеширование результатов аналитики")
+
+@enduml
