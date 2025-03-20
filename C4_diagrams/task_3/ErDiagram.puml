@@ -25,25 +25,44 @@ entity HouseOwners {
 }
 
 entity Devices {
-  *id : id <<generated>>
+  *id : number <<generated>>
   --
   *homeId : number <<FK>>
-  type : int
+  *typeId : number <<FK>>
   connect_url : string
   status : string
 }
 
 entity Scenarios {
-  *uuid : UUID <<generated>>
+  *id : number <<generated>>
   --
-  *home_uuid : UUID <<FK>>
+  *homeId : number <<FK>>
   scenario : string
   cron : string
 }
 
-Users ||..o{ HouseOwners
-Houses ||..o{ Scenarios
-Houses ||..o{ HouseOwners
-Houses ||..o{ Devices
+entity TelemetryData {
+    * id : number <<generated>>
+    --
+    deviceId: number <<FK>>
+    timestamp: DateTime
+    status: String
+    value: Float
+}
+
+entity DeviceType {
+    * id : number <<generated>>
+    --
+    name: String
+    category: String
+    description: String
+}
+
+Users ||..o{ HouseOwners : "связан с"
+Houses ||..o{ Scenarios : "относится к"
+Houses ||..o{ HouseOwners : связан с
+Houses ||..o{ Devices : "содержит"
+Devices ||--o{ TelemetryData : "генерирует данные"
+Devices ||--|| DeviceType : "относится к"
 
 @enduml
